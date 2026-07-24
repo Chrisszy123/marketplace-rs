@@ -10,6 +10,12 @@ pub struct Config {
     pub jwt_access_secret: String,
     pub cors_allowed_origin: String,
     pub cookie_secure: bool,
+    pub s3_endpoint_url: String,
+    pub s3_access_key_id: String,
+    pub s3_secret_access_key: String,
+    pub s3_bucket: String,
+    pub s3_region: String,
+    pub s3_public_url_base: String,
 }
 
 impl Config {
@@ -26,6 +32,12 @@ impl Config {
             cookie_secure: env::var("COOKIE_SECURE")
                 .map(|v| v == "true")
                 .unwrap_or(false),
+            s3_endpoint_url: require_env("S3_ENDPOINT_URL")?,
+            s3_access_key_id: require_env("S3_ACCESS_KEY_ID")?,
+            s3_secret_access_key: require_env("S3_SECRET_ACCESS_KEY")?,
+            s3_bucket: require_env("S3_BUCKET")?,
+            s3_region: env::var("S3_REGION").unwrap_or_else(|_| "us-east-1".to_string()),
+            s3_public_url_base: require_env("S3_PUBLIC_URL_BASE")?,
         })
     }
 }

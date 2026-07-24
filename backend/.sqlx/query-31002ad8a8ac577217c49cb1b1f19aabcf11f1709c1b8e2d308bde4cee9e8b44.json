@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS(\n             SELECT 1 FROM subscriptions\n             WHERE user_id = $1 AND tier = 'pro' AND status = 'active'\n           ) AS \"exists!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "31002ad8a8ac577217c49cb1b1f19aabcf11f1709c1b8e2d308bde4cee9e8b44"
+}

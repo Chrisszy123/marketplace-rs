@@ -2,7 +2,10 @@ pub mod auth;
 pub mod config;
 pub mod db;
 pub mod error;
+pub mod jobs;
+pub mod pagination;
 pub mod routes;
+pub mod storage;
 
 use std::sync::Arc;
 
@@ -19,6 +22,9 @@ pub struct AppState {
     pub sms: Arc<dyn SmsSender>,
     pub jwt_access_secret: String,
     pub cookie_secure: bool,
+    pub s3_client: aws_sdk_s3::Client,
+    pub s3_bucket: String,
+    pub s3_public_url_base: String,
 }
 
 pub fn app(state: AppState, cors_allowed_origin: &str) -> axum::Router {
@@ -29,7 +35,13 @@ pub fn app(state: AppState, cors_allowed_origin: &str) -> axum::Router {
                 .expect("CORS_ALLOWED_ORIGIN must be a valid header value"),
         )
         .allow_credentials(true)
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
     routes::router()

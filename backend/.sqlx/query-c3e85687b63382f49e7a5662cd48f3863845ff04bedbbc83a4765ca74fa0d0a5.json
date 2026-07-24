@@ -1,0 +1,222 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE listings SET\n             status = 'active', published_at = $1, expires_at = $2, updated_at = now()\n           WHERE id = $3\n           RETURNING id, seller_id, category_id, listing_type, title, description, price_kobo,\n                     currency, location, condition, service_area, status, is_boosted,\n                     published_at, expires_at, created_at, updated_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "seller_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "seller_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "category_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "category_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "listing_type",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "listing_type"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "title",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "title"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "price_kobo",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "price_kobo"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "currency",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "currency"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "location",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "location"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "condition",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "condition"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "service_area",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "service_area"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "is_boosted",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "is_boosted"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "published_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "published_at"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "expires_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "expires_at"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "updated_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "updated_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c3e85687b63382f49e7a5662cd48f3863845ff04bedbbc83a4765ca74fa0d0a5"
+}

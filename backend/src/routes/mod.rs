@@ -1,15 +1,28 @@
 mod auth;
+mod categories;
 mod health;
+mod listings;
 mod users;
 
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{get, post},
     Router,
 };
 
 use crate::AppState;
 
+const PHOTO_UPLOAD_BODY_LIMIT_BYTES: usize = 6 * 1024 * 1024;
+
 pub fn router() -> Router<AppState> {
+    let listing_photo_routes = Router::new()
+        .route("/listings/{id}/photos", post(listings::upload_photo))
+        .route(
+            "/listings/{id}/photos/{photo_id}",
+            axum::routing::delete(listings::delete_photo),
+        )
+        .route_layer(DefaultBodyLimit::max(PHOTO_UPLOAD_BODY_LIMIT_BYTES));
+
     Router::new()
         .route("/health", get(health::health))
         .route("/auth/signup", post(auth::signup))
@@ -18,4 +31,13 @@ pub fn router() -> Router<AppState> {
         .route("/auth/refresh", post(auth::refresh))
         .route("/auth/logout", post(auth::logout))
         .route("/users/me", get(users::me))
+        .route("/categories", get(categories::list))
+        .route("/listings", post(listings::create))
+        .route("/listings/mine", get(listings::mine))
+        .route(
+            "/listings/{id}",
+            get(listings::get).put(listings::update).delete(listings::delete),
+        )
+        .route("/listings/{id}/renew", post(listings::renew))
+        .merge(listing_photo_routes)
 }

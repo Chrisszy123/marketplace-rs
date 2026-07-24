@@ -10,6 +10,8 @@ pub enum AppError {
     #[error("{0}")]
     Forbidden(String),
     #[error("{0}")]
+    NotFound(String),
+    #[error("{0}")]
     Conflict(String),
     #[error("too many requests")]
     RateLimited,
@@ -29,6 +31,7 @@ impl IntoResponse for AppError {
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg.clone()),
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
             AppError::Conflict(msg) => (StatusCode::CONFLICT, msg.clone()),
             AppError::RateLimited => (StatusCode::TOO_MANY_REQUESTS, self.to_string()),
             AppError::Internal(err) => {

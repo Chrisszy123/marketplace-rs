@@ -1,6 +1,11 @@
 import type {
+  Category,
+  Listing,
+  ListingPhoto,
+  ListingRequest,
   LoginPayload,
   LoginResponse,
+  MineResponse,
   RefreshResponse,
   SignupPayload,
   SignupResponse,
@@ -26,7 +31,10 @@ async function request<T>(
   accessToken?: string,
 ): Promise<T> {
   const headers = new Headers(options.headers)
-  headers.set('Content-Type', 'application/json')
+  // Let the browser set Content-Type (with boundary) for multipart/FormData uploads.
+  if (!(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json')
+  }
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)
 
   const res = await fetch(`${API_URL}${path}`, {
@@ -75,4 +83,52 @@ export const api = {
 
   getMe: (accessToken: string) =>
     request<UserProfile>('/users/me', {}, accessToken),
+
+  getCategories: () => request<Category[]>('/categories'),
+
+  createListing: (payload: ListingRequest, accessToken: string) =>
+    request<Listing>(
+      '/listings',
+      { method: 'POST', body: JSON.stringify(payload) },
+      accessToken,
+    ),
+
+  getListing: (id: string) => request<Listing>(`/listings/${id}`),
+
+  updateListing: (id: string, payload: ListingRequest, accessToken: string) =>
+    request<Listing>(
+      `/listings/${id}`,
+      { method: 'PUT', body: JSON.stringify(payload) },
+      accessToken,
+    ),
+
+  deleteListing: (id: string, accessToken: string) =>
+    request<void>(`/listings/${id}`, { method: 'DELETE' }, accessToken),
+
+  renewListing: (id: string, accessToken: string) =>
+    request<Listing>(`/listings/${id}/renew`, { method: 'POST' }, accessToken),
+
+  getMyListings: (
+    params: { cursor?: string; limit?: number },
+    accessToken: string,
+  ) => {
+    const search = new URLSearchParams()
+    if (params.cursor) search.set('cursor', params.cursor)
+    if (params.limit) search.set('limit', String(params.limit))
+    const qs = search.toString()
+    return request<MineResponse>(`/listings/mine${qs ? `?${qs}` : ''}`, {}, accessToken)
+  },
+
+  uploadListingPhoto: (id: string, file: File, accessToken: string) => {
+    const formData = new FormData()
+    formData.append('photo', file)
+    return request<ListingPhoto>(
+      `/listings/${id}/photos`,
+      { method: 'POST', body: formData },
+      accessToken,
+    )
+  },
+
+  deleteListingPhoto: (id: string, photoId: string, accessToken: string) =>
+    request<void>(`/listings/${id}/photos/${photoId}`, { method: 'DELETE' }, accessToken),
 }

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export function ProfilePage() {
@@ -56,6 +56,13 @@ export function ProfilePage() {
             <dd>{user.rating ?? 'No ratings yet'}</dd>
           </div>
         </dl>
+
+        <Link
+          to="/my-listings"
+          className="mb-3 block w-full rounded-full bg-brand-green py-2 text-center font-medium text-white"
+        >
+          My listings
+        </Link>
 
         <button
           type="button"

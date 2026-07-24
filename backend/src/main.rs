@@ -1,6 +1,8 @@
 use std::{net::SocketAddr, sync::Arc};
 
-use marketplace_backend::{app, auth::sms::LoggingSmsSender, config::Config, db, AppState};
+use marketplace_backend::{
+    app, auth::sms::LoggingSmsSender, config::Config, db, jobs, storage, AppState,
+};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,12 +23,20 @@ async fn main() -> anyhow::Result<()> {
     let redis_client = redis::Client::open(config.redis_url.clone())?;
     let redis = redis::aio::ConnectionManager::new(redis_client).await?;
 
+    let s3_client = storage::build_client(&config);
+    storage::ensure_bucket(&s3_client, &config.s3_bucket).await?;
+
+    jobs::spawn_expiry_sweep(db.clone());
+
     let state = AppState {
         db,
         redis,
         sms: Arc::new(LoggingSmsSender),
         jwt_access_secret: config.jwt_access_secret.clone(),
         cookie_secure: config.cookie_secure,
+        s3_client,
+        s3_bucket: config.s3_bucket.clone(),
+        s3_public_url_base: config.s3_public_url_base.clone(),
     };
 
     let listener = tokio::net::TcpListener::bind(&config.server_addr).await?;

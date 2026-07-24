@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Host Grotesk', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  --color-brand-green: #4cb311;
+  --color-brand-bg: #eff9f2;
+  --color-brand-cream: #fefcf7;
+  --color-brand-dark-green: #0b2602;
+  --color-brand-dark: #1e1e1e;
+  --color-brand-forest: #17381b;
+  --color-brand-boosted: #e5dd7c;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-brand-bg);
+  color: var(--color-brand-dark);
+}

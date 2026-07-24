@@ -1,0 +1,13 @@
+# Rust
+backend/target
+backend/.env
+
+# React
+frontend/.env
+frontend/node_modules
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea

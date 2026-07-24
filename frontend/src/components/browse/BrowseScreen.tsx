@@ -3,12 +3,20 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api, ApiRequestError } from '../../api/client'
 import { BottomSheet } from '../ui/BottomSheet'
 import { CategoryPillsRow } from './CategoryPillsRow'
+import { FAQSection } from './FAQSection'
+import { FeaturedCarousel } from './FeaturedCarousel'
 import { FilterSidebar, PRICE_CEILING_NAIRA, type FilterValues } from './FilterSidebar'
+import { HomeFooter } from './HomeFooter'
 import { ListingGrid } from './ListingGrid'
 import { TopBar } from './TopBar'
 import type { Category, SearchHit, SortOption } from '../../api/types'
 
-export function BrowseScreen() {
+interface BrowseScreenProps {
+  /** Home-only chrome: featured carousel above the categories, FAQ + footer below the grid. */
+  showHomeExtras?: boolean
+}
+
+export function BrowseScreen({ showHomeExtras = false }: BrowseScreenProps) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -151,6 +159,8 @@ export function BrowseScreen() {
     <div className="min-h-screen bg-brand-bg">
       <TopBar query={queryInput} onQueryChange={setQueryInput} onSubmit={handleSearchSubmit} />
 
+      {showHomeExtras && <FeaturedCarousel />}
+
       <div className="px-4 py-3 sm:px-6 lg:px-8">
         <CategoryPillsRow
           categories={topLevelCategories}
@@ -192,6 +202,13 @@ export function BrowseScreen() {
           />
         </div>
       </div>
+
+      {showHomeExtras && (
+        <>
+          <FAQSection />
+          <HomeFooter />
+        </>
+      )}
 
       <BottomSheet open={isFilterSheetOpen} onClose={() => setIsFilterSheetOpen(false)} title="Filters">
         <FilterSidebar

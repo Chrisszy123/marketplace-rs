@@ -9,7 +9,7 @@ interface CategoryPillsRowProps {
 
 export function CategoryPillsRow({ categories, activeCategoryId, onSelect }: CategoryPillsRowProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto px-4 pb-1 sm:px-0" role="tablist" aria-label="Categories">
+    <div className="flex gap-2 overflow-x-auto px-4 pb-3 sm:px-0 sm:pb-1" role="tablist" aria-label="Categories">
       <button
         type="button"
         role="tab"

@@ -10,6 +10,8 @@ import type {
   RefreshResponse,
   SearchParams,
   SearchResponse,
+  SellerListingsResponse,
+  SellerProfile,
   SendMessagePayload,
   SignupPayload,
   SignupResponse,
@@ -93,6 +95,12 @@ export const api = {
 
   getMe: (accessToken: string) =>
     request<UserProfile>('/users/me', {}, accessToken),
+
+  getSellerProfile: (id: string, accessToken: string) =>
+    request<SellerProfile>(`/users/${id}`, {}, accessToken),
+
+  getSellerListings: (id: string, limit = 5) =>
+    request<SellerListingsResponse>(`/users/${id}/listings?limit=${limit}`),
 
   getCategories: () => request<Category[]>('/categories'),
 

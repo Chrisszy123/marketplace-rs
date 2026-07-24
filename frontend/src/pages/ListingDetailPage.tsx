@@ -42,7 +42,7 @@ export function ListingDetailPage() {
 
   function handleMessageSeller() {
     if (!listing) return
-    requireAuth(() => navigate(`/listings/${listing.id}/chat?with=${listing.seller_id}`))
+    requireAuth(() => navigate(`/messages/${listing.id}?with=${listing.seller_id}`))
   }
 
   if (error) {

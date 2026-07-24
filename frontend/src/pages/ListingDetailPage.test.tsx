@@ -72,7 +72,7 @@ function renderDetail() {
         <AuthPromptProvider>
           <Routes>
             <Route path="/listings/:id" element={<ListingDetailPage />} />
-            <Route path="/listings/:id/chat" element={<p>Chat page reached</p>} />
+            <Route path="/messages/:listingId" element={<p>Chat page reached</p>} />
           </Routes>
         </AuthPromptProvider>
       </AuthProvider>

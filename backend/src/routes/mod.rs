@@ -33,6 +33,8 @@ pub fn router() -> Router<AppState> {
         .route("/auth/refresh", post(auth::refresh))
         .route("/auth/logout", post(auth::logout))
         .route("/users/me", get(users::me))
+        .route("/users/{id}", get(users::seller_profile))
+        .route("/users/{id}/listings", get(listings::by_seller))
         .route("/categories", get(categories::list))
         .route("/search", get(search::search))
         .route("/listings", post(listings::create))

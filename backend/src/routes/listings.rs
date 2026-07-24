@@ -491,6 +491,55 @@ pub async fn mine(
     Ok(Json(MineResponse { items, next_cursor }))
 }
 
+const SELLER_LISTINGS_DEFAULT_LIMIT: i64 = 5;
+const SELLER_LISTINGS_MAX_LIMIT: i64 = 20;
+
+#[derive(Deserialize)]
+pub struct BySellerQuery {
+    limit: Option<i64>,
+}
+
+#[derive(Serialize)]
+pub struct BySellerResponse {
+    items: Vec<Listing>,
+}
+
+/// A seller's public storefront preview (e.g. "top items" on their messaging profile card) —
+/// a fixed, bounded top-N, not an infinite scroll, so plain LIMIT is used rather than cursor
+/// pagination.
+pub async fn by_seller(
+    State(state): State<AppState>,
+    Path(seller_id): Path<Uuid>,
+    Query(query): Query<BySellerQuery>,
+) -> Result<Json<BySellerResponse>, AppError> {
+    let limit = query
+        .limit
+        .unwrap_or(SELLER_LISTINGS_DEFAULT_LIMIT)
+        .clamp(1, SELLER_LISTINGS_MAX_LIMIT);
+
+    let rows = sqlx::query_as!(
+        ListingRow,
+        r#"SELECT id, seller_id, category_id, listing_type, title, description, price_kobo,
+                  currency, location, condition, service_area, status, is_boosted,
+                  published_at, expires_at, created_at, updated_at
+           FROM listings
+           WHERE seller_id = $1 AND status IN ('active', 'expiring')
+           ORDER BY is_boosted DESC, published_at DESC
+           LIMIT $2"#,
+        seller_id,
+        limit,
+    )
+    .fetch_all(&state.db)
+    .await?;
+
+    let mut items = Vec::with_capacity(rows.len());
+    for row in rows {
+        items.push(attach_photos(&state.db, row).await?);
+    }
+
+    Ok(Json(BySellerResponse { items }))
+}
+
 pub async fn upload_photo(
     State(state): State<AppState>,
     auth_user: AuthUser,

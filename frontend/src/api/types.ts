@@ -161,6 +161,21 @@ export interface ThreadsResponse {
   next_cursor: string | null
 }
 
+export interface SellerProfile {
+  id: string
+  display_name: string
+  avatar_url: string | null
+  location: string | null
+  phone_number: string
+  phone_verified: boolean
+  member_since: string
+  rating: number | null
+}
+
+export interface SellerListingsResponse {
+  items: Listing[]
+}
+
 export interface WsNewMessageEvent {
   type: 'new_message'
   message: Message

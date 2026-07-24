@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { api, ApiRequestError } from '../api/client'
-import { ListingCard } from '../components/ui/ListingCard'
-import { useAuth } from '../context/AuthContext'
-import { useMessageSocket } from '../hooks/useMessageSocket'
-import type { Listing, Message } from '../api/types'
+import { api, ApiRequestError } from '../../api/client'
+import { useAuth } from '../../context/AuthContext'
+import { useMessageSocket } from '../../hooks/useMessageSocket'
+import { Avatar } from '../ui/Avatar'
+import { ChevronLeftIcon } from '../ui/icons'
+import { CallButton } from './CallButton'
+import { SellerDetailPanel } from './SellerDetailPanel'
+import type { Listing, Message, SellerProfile } from '../../api/types'
 
 const QUICK_REPLY = 'Is this still available?'
 
-export function ThreadPage() {
-  const { id: listingId } = useParams<{ id: string }>()
-  const [searchParams] = useSearchParams()
-  const withId = searchParams.get('with')
+interface ChatPanelProps {
+  listingId: string
+  withId: string
+  onBack: () => void
+}
+
+export function ChatPanel({ listingId, withId, onBack }: ChatPanelProps) {
   const { accessToken, user } = useAuth()
 
   const [messages, setMessages] = useState<Message[]>([])
@@ -23,6 +28,11 @@ export function ThreadPage() {
   const [isSending, setIsSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  const [sellerProfile, setSellerProfile] = useState<SellerProfile | null>(null)
+  const [isSellerLoading, setIsSellerLoading] = useState(true)
+  const [sellerError, setSellerError] = useState<string | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+
   function mergeIncoming(incoming: Message[]) {
     setMessages((prev) => {
       const byId = new Map(prev.map((m) => [m.id, m]))
@@ -32,16 +42,37 @@ export function ThreadPage() {
   }
 
   useEffect(() => {
-    if (!listingId) return
     api.getListing(listingId).then(setPinnedListing).catch(() => setPinnedListing(null))
   }, [listingId])
 
+  useEffect(() => {
+    if (!accessToken) return
+    let cancelled = false
+    setIsSellerLoading(true)
+    setSellerError(null)
+    api
+      .getSellerProfile(withId, accessToken)
+      .then((profile) => {
+        if (!cancelled) setSellerProfile(profile)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setSellerError(err instanceof ApiRequestError ? err.message : 'Failed to load seller')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsSellerLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [withId, accessToken])
+
   const loadLatest = useCallback(async () => {
-    if (!listingId) return
     try {
       const res = await api.getThreadMessages(
         listingId,
-        { with: withId ?? undefined, limit: 30 },
+        { with: withId, limit: 30 },
         accessToken as string,
       )
       mergeIncoming(res.items)
@@ -54,6 +85,9 @@ export function ThreadPage() {
   }, [listingId, withId, accessToken])
 
   useEffect(() => {
+    setMessages([])
+    setHasLoadedFirstPage(false)
+    setOlderCursor(null)
     loadLatest()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId, withId])
@@ -76,11 +110,11 @@ export function ThreadPage() {
   )
 
   async function loadOlder() {
-    if (!listingId || !olderCursor) return
+    if (!olderCursor) return
     try {
       const res = await api.getThreadMessages(
         listingId,
-        { with: withId ?? undefined, cursor: olderCursor, limit: 30 },
+        { with: withId, cursor: olderCursor, limit: 30 },
         accessToken as string,
       )
       mergeIncoming(res.items)
@@ -91,7 +125,7 @@ export function ThreadPage() {
   }
 
   async function sendBody(text: string) {
-    if (!listingId || !withId || !text.trim()) return
+    if (!text.trim()) return
     setError(null)
     setIsSending(true)
     try {
@@ -114,40 +148,40 @@ export function ThreadPage() {
     sendBody(body)
   }
 
-  if (!listingId || !withId) {
-    return <p className="p-8 text-center text-brand-dark">Missing conversation details.</p>
-  }
+  const sellerName = sellerProfile?.display_name ?? 'Seller'
 
   return (
-    <main className="flex h-[calc(100dvh-5rem)] flex-col bg-brand-bg">
-      <div className="flex items-center gap-2 border-b border-brand-dark/10 bg-white px-3 py-2.5">
-        <Link
-          to={`/listings/${listingId}`}
-          aria-label="Back to listing"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-brand-dark/60 outline-none transition hover:bg-brand-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green"
+    <div className="flex h-full flex-col bg-brand-bg w-full pr-1">
+      <div className="flex shrink-0 items-center gap-1 border-b border-brand-dark/10 bg-white px-2 py-2.5 sm:px-3">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Back to conversations"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-brand-dark/60 outline-none transition hover:bg-brand-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green md:hidden"
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
-          </svg>
-        </Link>
-        {pinnedListing && (
-          <ListingCard
-            variant="pinned"
-            className="flex-1"
-            listing={{
-              id: pinnedListing.id,
-              title: pinnedListing.title,
-              priceKobo: pinnedListing.price_kobo,
-              currency: pinnedListing.currency,
-              thumbnailUrl: pinnedListing.photos[0]?.url ?? null,
-              isBoosted: pinnedListing.is_boosted,
-              status: pinnedListing.status,
-            }}
-          />
-        )}
+          <ChevronLeftIcon className="h-5 w-5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsDetailOpen(true)}
+          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1.5 py-1 text-left outline-none transition hover:bg-brand-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green"
+        >
+          <Avatar name={sellerName} url={sellerProfile?.avatar_url} size="sm" />
+          <div className="min-w-0">
+            <p className="truncate text-body-sm font-semibold text-brand-dark">
+              {isSellerLoading ? 'Loading…' : sellerName}
+            </p>
+            {pinnedListing && (
+              <p className="truncate text-caption text-brand-dark/55">Re: {pinnedListing.title}</p>
+            )}
+          </div>
+        </button>
+
+        <CallButton sellerProfile={sellerProfile} isLoading={isSellerLoading} error={sellerError} />
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-4 sm:px-4">
         {olderCursor && (
           <button
             type="button"
@@ -174,9 +208,12 @@ export function ThreadPage() {
         <div ref={bottomRef} />
       </div>
 
-      {error && <p className="px-4 pb-2 text-body-sm text-brand-error">{error}</p>}
+      {error && <p className="shrink-0 px-4 pb-2 text-body-sm text-brand-error">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="flex gap-2 border-t border-brand-dark/10 bg-white p-3">
+      <form
+        onSubmit={handleSubmit}
+        className="flex shrink-0 gap-2 border-t border-brand-dark/10 bg-white p-3"
+      >
         {messages.length === 0 && (
           <button
             type="button"
@@ -201,6 +238,16 @@ export function ThreadPage() {
           Send
         </button>
       </form>
-    </main>
+
+      {isDetailOpen && (
+        <SellerDetailPanel
+          sellerId={withId}
+          sellerProfile={sellerProfile}
+          isLoadingProfile={isSellerLoading}
+          profileError={sellerError}
+          onClose={() => setIsDetailOpen(false)}
+        />
+      )}
+    </div>
   )
 }

@@ -94,7 +94,7 @@ export function BuyingTab() {
             {threads.map((t) => (
               <li key={`${t.listing_id}:${t.counterpart_id}`}>
                 <Link
-                  to={`/listings/${t.listing_id}/chat?with=${t.counterpart_id}`}
+                  to={`/messages/${t.listing_id}?with=${t.counterpart_id}`}
                   className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3.5 shadow-card"
                 >
                   <div className="min-w-0">

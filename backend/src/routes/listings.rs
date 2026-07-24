@@ -102,6 +102,41 @@ async fn attach_photos(db: &PgPool, row: ListingRow) -> Result<Listing, AppError
     })
 }
 
+async fn resolve_top_category_id(db: &PgPool, category_id: Uuid) -> Result<Uuid, AppError> {
+    let top_id = sqlx::query_scalar!(
+        r#"SELECT COALESCE(parent_id, id) AS "top_id!" FROM categories WHERE id = $1"#,
+        category_id,
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(top_id)
+}
+
+/// Keeps the search index in sync with a write. Propagates failures for create/update/renew —
+/// silently letting a listing become unsearchable would be a worse failure mode than a 500.
+async fn sync_listing_to_search(state: &AppState, row: &ListingRow) -> Result<(), AppError> {
+    let top_category_id = resolve_top_category_id(&state.db, row.category_id).await?;
+    let doc = crate::search::ListingDocument {
+        id: row.id,
+        seller_id: row.seller_id,
+        category_id: row.category_id,
+        top_category_id,
+        listing_type: row.listing_type.clone(),
+        title: row.title.clone(),
+        description: row.description.clone(),
+        price_kobo: row.price_kobo,
+        currency: row.currency.clone(),
+        location: row.location.clone(),
+        condition: row.condition.clone(),
+        service_area: row.service_area.clone(),
+        is_boosted: row.is_boosted,
+        published_at: row.published_at.timestamp(),
+    };
+    crate::search::index_listing(&state.meilisearch, &doc)
+        .await
+        .map_err(AppError::Internal)
+}
+
 #[derive(Deserialize)]
 pub struct ListingRequest {
     category_id: Uuid,
@@ -245,6 +280,8 @@ pub async fn create(
     .fetch_one(&state.db)
     .await?;
 
+    sync_listing_to_search(&state, &row).await?;
+
     let listing = attach_photos(&state.db, row).await?;
     Ok((StatusCode::CREATED, Json(listing)))
 }
@@ -330,6 +367,8 @@ pub async fn update(
     .fetch_one(&state.db)
     .await?;
 
+    sync_listing_to_search(&state, &row).await?;
+
     Ok(Json(attach_photos(&state.db, row).await?))
 }
 
@@ -359,6 +398,10 @@ pub async fn delete(
         }
     }
 
+    if let Err(err) = crate::search::delete_listing(&state.meilisearch, listing_id).await {
+        tracing::warn!(?err, %listing_id, "failed to remove listing from search index");
+    }
+
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -386,6 +429,8 @@ pub async fn renew(
     )
     .fetch_one(&state.db)
     .await?;
+
+    sync_listing_to_search(&state, &row).await?;
 
     Ok(Json(attach_photos(&state.db, row).await?))
 }

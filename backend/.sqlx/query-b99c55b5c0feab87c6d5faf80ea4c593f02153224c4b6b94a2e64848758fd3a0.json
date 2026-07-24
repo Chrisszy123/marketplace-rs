@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE listings SET status = 'expired', updated_at = now()\n           WHERE status IN ('active', 'expiring') AND expires_at <= now()\n           RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b99c55b5c0feab87c6d5faf80ea4c593f02153224c4b6b94a2e64848758fd3a0"
+}

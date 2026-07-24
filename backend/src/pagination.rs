@@ -42,3 +42,28 @@ pub fn decode(cursor: &str) -> Result<Cursor, AppError> {
 pub fn normalize_limit(limit: Option<i64>) -> i64 {
     limit.unwrap_or(DEFAULT_PAGE_SIZE).clamp(1, MAX_PAGE_SIZE)
 }
+
+/// Meilisearch's search API is fundamentally offset-based (relevance ranking has no stable
+/// keyset to seek on), unlike the Postgres-backed listing queries above. To keep the *API
+/// contract* consistent — an opaque token, never a client-editable raw integer — search
+/// pagination wraps a plain offset in the same opaque-token shape rather than exposing it
+/// directly as a query param.
+#[derive(Serialize, Deserialize)]
+struct OffsetCursorPayload {
+    offset: usize,
+}
+
+pub fn encode_offset(offset: usize) -> String {
+    let json = serde_json::to_vec(&OffsetCursorPayload { offset })
+        .expect("offset cursor payload always serializes");
+    URL_SAFE_NO_PAD.encode(json)
+}
+
+pub fn decode_offset(cursor: &str) -> Result<usize, AppError> {
+    let bytes = URL_SAFE_NO_PAD
+        .decode(cursor)
+        .map_err(|_| AppError::BadRequest("invalid cursor".into()))?;
+    let payload: OffsetCursorPayload = serde_json::from_slice(&bytes)
+        .map_err(|_| AppError::BadRequest("invalid cursor".into()))?;
+    Ok(payload.offset)
+}

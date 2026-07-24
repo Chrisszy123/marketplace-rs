@@ -93,3 +93,33 @@ export interface MineResponse {
   items: Listing[]
   next_cursor: string | null
 }
+
+export interface SearchHit {
+  id: string
+  category_id: string
+  listing_type: ListingType
+  title: string
+  price_kobo: number
+  currency: string
+  location: string
+  is_boosted: boolean
+  thumbnail_url: string | null
+}
+
+export type SortOption = 'relevance' | 'date' | 'price_asc' | 'price_desc'
+
+export interface SearchParams {
+  q?: string
+  category_id?: string
+  location?: string
+  min_price_kobo?: number
+  max_price_kobo?: number
+  sort?: SortOption
+  cursor?: string
+  limit?: number
+}
+
+export interface SearchResponse {
+  items: SearchHit[]
+  next_cursor: string | null
+}

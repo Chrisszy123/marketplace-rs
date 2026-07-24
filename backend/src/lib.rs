@@ -5,6 +5,7 @@ pub mod error;
 pub mod jobs;
 pub mod pagination;
 pub mod routes;
+pub mod search;
 pub mod storage;
 
 use std::sync::Arc;
@@ -25,6 +26,7 @@ pub struct AppState {
     pub s3_client: aws_sdk_s3::Client,
     pub s3_bucket: String,
     pub s3_public_url_base: String,
+    pub meilisearch: meilisearch_sdk::client::Client,
 }
 
 pub fn app(state: AppState, cors_allowed_origin: &str) -> axum::Router {

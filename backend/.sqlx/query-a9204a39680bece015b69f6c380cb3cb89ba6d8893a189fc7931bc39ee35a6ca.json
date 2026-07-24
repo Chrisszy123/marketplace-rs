@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COALESCE(parent_id, id) AS \"top_id!\" FROM categories WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "top_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "a9204a39680bece015b69f6c380cb3cb89ba6d8893a189fc7931bc39ee35a6ca"
+}

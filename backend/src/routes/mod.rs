@@ -2,6 +2,7 @@ mod auth;
 mod categories;
 mod health;
 mod listings;
+mod search;
 mod users;
 
 use axum::{
@@ -32,6 +33,7 @@ pub fn router() -> Router<AppState> {
         .route("/auth/logout", post(auth::logout))
         .route("/users/me", get(users::me))
         .route("/categories", get(categories::list))
+        .route("/search", get(search::search))
         .route("/listings", post(listings::create))
         .route("/listings/mine", get(listings::mine))
         .route(

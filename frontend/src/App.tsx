@@ -8,6 +8,7 @@ import { ListingDetailPage } from './pages/ListingDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { MyListingsPage } from './pages/MyListingsPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { SearchResultsPage } from './pages/SearchResultsPage'
 import { SignupPage } from './pages/SignupPage'
 import { VerifyOtpPage } from './pages/VerifyOtpPage'
 
@@ -21,6 +22,7 @@ function App() {
           <Route path="/verify" element={<VerifyOtpPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/listings/:id" element={<ListingDetailPage />} />
+          <Route path="/search" element={<SearchResultsPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/listings/new" element={<CreateListingPage />} />

@@ -206,7 +206,7 @@ async fn free_tier_listing_limit_is_enforced() {
 #[serial_test::serial(redis_rate_limit)]
 async fn expiry_sweep_flips_status_and_mine_is_cursor_paginated() {
     let sms = Arc::new(CapturingSmsSender::default());
-    let base_url = common::spawn_app_with_sms(sms.clone()).await;
+    let (base_url, meilisearch) = common::spawn_app_with_search(sms.clone()).await;
     let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
     let access_token = common::signup_verify_login(&base_url, &client, &sms).await;
 
@@ -270,7 +270,7 @@ async fn expiry_sweep_flips_status_and_mine_is_cursor_paginated() {
     .await
     .unwrap();
 
-    jobs::sweep_once(&db).await.expect("sweep failed");
+    jobs::sweep_once(&db, &meilisearch).await.expect("sweep failed");
 
     let expired_listing: Value = client
         .get(format!("{base_url}/listings/{}", listing_ids[0]))

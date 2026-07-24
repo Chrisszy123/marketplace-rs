@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT ON (listing_id) listing_id, url\n           FROM listing_photos\n           WHERE listing_id = ANY($1)\n           ORDER BY listing_id, position ASC, created_at ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "listing_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "listing_photos",
+            "name": "listing_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "url",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listing_photos",
+            "name": "url"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "70c98df3548001c76da145e4bb5b462413ee4cf42a26f9a4d8f40d4b34ca0a1b"
+}

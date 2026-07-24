@@ -7,6 +7,8 @@ import type {
   LoginResponse,
   MineResponse,
   RefreshResponse,
+  SearchParams,
+  SearchResponse,
   SignupPayload,
   SignupResponse,
   UserProfile,
@@ -131,4 +133,18 @@ export const api = {
 
   deleteListingPhoto: (id: string, photoId: string, accessToken: string) =>
     request<void>(`/listings/${id}/photos/${photoId}`, { method: 'DELETE' }, accessToken),
+
+  search: (params: SearchParams) => {
+    const search = new URLSearchParams()
+    if (params.q) search.set('q', params.q)
+    if (params.category_id) search.set('category_id', params.category_id)
+    if (params.location) search.set('location', params.location)
+    if (params.min_price_kobo != null) search.set('min_price_kobo', String(params.min_price_kobo))
+    if (params.max_price_kobo != null) search.set('max_price_kobo', String(params.max_price_kobo))
+    if (params.sort) search.set('sort', params.sort)
+    if (params.cursor) search.set('cursor', params.cursor)
+    if (params.limit) search.set('limit', String(params.limit))
+    const qs = search.toString()
+    return request<SearchResponse>(`/search${qs ? `?${qs}` : ''}`)
+  },
 }

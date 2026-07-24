@@ -4,18 +4,21 @@ use std::{net::SocketAddr, sync::Arc};
 
 use async_trait::async_trait;
 use marketplace_backend::{
-    app, auth::sms::LoggingSmsSender, auth::sms::SmsSender, config::Config, db, storage, AppState,
+    app, auth::sms::LoggingSmsSender, auth::sms::SmsSender, config::Config, db, search, storage,
+    AppState,
 };
 use tokio::sync::Mutex;
 
 pub const CORS_ORIGIN: &str = "http://localhost:5173";
 
-fn test_s3_config() -> Config {
+fn test_config() -> Config {
     Config {
         database_url: String::new(),
         redis_url: String::new(),
-        meilisearch_url: String::new(),
-        meilisearch_api_key: String::new(),
+        meilisearch_url: std::env::var("MEILISEARCH_URL")
+            .unwrap_or_else(|_| "http://localhost:7700".to_string()),
+        meilisearch_api_key: std::env::var("MEILISEARCH_API_KEY")
+            .unwrap_or_else(|_| "marketplace_dev_master_key".to_string()),
         server_addr: String::new(),
         jwt_access_secret: String::new(),
         cors_allowed_origin: String::new(),
@@ -34,13 +37,27 @@ fn test_s3_config() -> Config {
 }
 
 pub async fn spawn_app() -> String {
-    spawn_app_with_sms(Arc::new(LoggingSmsSender)).await
+    spawn_app_internal(Arc::new(LoggingSmsSender)).await.0
 }
 
-/// Boots the app on an ephemeral port with a real Postgres + Redis connection (same services
-/// docker-compose provides) and returns its base URL. Flushes Redis so per-test rate-limit
-/// counters start clean regardless of what earlier test runs did.
 pub async fn spawn_app_with_sms(sms: Arc<dyn SmsSender>) -> String {
+    spawn_app_internal(sms).await.0
+}
+
+/// Like `spawn_app_with_sms`, but also returns the Meilisearch client so search tests can wait
+/// on indexing tasks and drive the expiry sweep directly.
+pub async fn spawn_app_with_search(
+    sms: Arc<dyn SmsSender>,
+) -> (String, meilisearch_sdk::client::Client) {
+    spawn_app_internal(sms).await
+}
+
+/// Boots the app on an ephemeral port with real Postgres/Redis/Meilisearch/MinIO connections
+/// (same services docker-compose provides) and returns its base URL. Flushes Redis and clears
+/// the Meilisearch index so per-test state starts clean regardless of what earlier runs did.
+async fn spawn_app_internal(
+    sms: Arc<dyn SmsSender>,
+) -> (String, meilisearch_sdk::client::Client) {
     let database_url = std::env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set to run integration tests");
     let redis_url =
@@ -63,11 +80,18 @@ pub async fn spawn_app_with_sms(sms: Arc<dyn SmsSender>) -> String {
         .await
         .expect("failed to flush test redis");
 
-    let s3_config = test_s3_config();
-    let s3_client = storage::build_client(&s3_config);
-    storage::ensure_bucket(&s3_client, &s3_config.s3_bucket)
+    let config = test_config();
+
+    let s3_client = storage::build_client(&config);
+    storage::ensure_bucket(&s3_client, &config.s3_bucket)
         .await
         .expect("failed to ensure test bucket exists");
+
+    let meilisearch = search::build_client(&config).expect("invalid test meilisearch config");
+    search::ensure_index(&meilisearch)
+        .await
+        .expect("failed to ensure test search index");
+    clear_search_index(&meilisearch).await;
 
     let state = AppState {
         db,
@@ -76,8 +100,9 @@ pub async fn spawn_app_with_sms(sms: Arc<dyn SmsSender>) -> String {
         jwt_access_secret: "test-secret-do-not-use-in-prod".to_string(),
         cookie_secure: false,
         s3_client,
-        s3_bucket: s3_config.s3_bucket.clone(),
-        s3_public_url_base: s3_config.s3_public_url_base.clone(),
+        s3_bucket: config.s3_bucket.clone(),
+        s3_public_url_base: config.s3_public_url_base.clone(),
+        meilisearch: meilisearch.clone(),
     };
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -94,7 +119,14 @@ pub async fn spawn_app_with_sms(sms: Arc<dyn SmsSender>) -> String {
         .expect("test server crashed");
     });
 
-    format!("http://{addr}")
+    (format!("http://{addr}"), meilisearch)
+}
+
+async fn clear_search_index(client: &meilisearch_sdk::client::Client) {
+    let index = client.index(search::INDEX_NAME);
+    if let Ok(task) = index.delete_all_documents().await {
+        let _ = task.wait_for_completion(client, None, None).await;
+    }
 }
 
 pub fn unique_email() -> String {

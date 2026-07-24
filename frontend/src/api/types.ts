@@ -123,3 +123,45 @@ export interface SearchResponse {
   items: SearchHit[]
   next_cursor: string | null
 }
+
+export interface Message {
+  id: string
+  listing_id: string
+  sender_id: string
+  recipient_id: string
+  body: string
+  read_at: string | null
+  created_at: string
+}
+
+export interface SendMessagePayload {
+  body: string
+  recipient_id?: string
+}
+
+export interface ThreadMessagesResponse {
+  items: Message[]
+  next_cursor: string | null
+}
+
+export interface ThreadSummary {
+  listing_id: string
+  listing_title: string
+  counterpart_id: string
+  counterpart_name: string
+  counterpart_avatar_url: string | null
+  last_message_body: string
+  last_message_at: string
+  last_message_from_me: boolean
+  unread_count: number
+}
+
+export interface ThreadsResponse {
+  items: ThreadSummary[]
+  next_cursor: string | null
+}
+
+export interface WsNewMessageEvent {
+  type: 'new_message'
+  message: Message
+}

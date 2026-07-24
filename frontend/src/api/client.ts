@@ -5,17 +5,25 @@ import type {
   ListingRequest,
   LoginPayload,
   LoginResponse,
+  Message,
   MineResponse,
   RefreshResponse,
   SearchParams,
   SearchResponse,
+  SendMessagePayload,
   SignupPayload,
   SignupResponse,
+  ThreadMessagesResponse,
+  ThreadsResponse,
   UserProfile,
   VerifyOtpPayload,
 } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL
+
+export function websocketUrl(accessToken: string): string {
+  return `${API_URL.replace(/^http/, 'ws')}/ws?token=${encodeURIComponent(accessToken)}`
+}
 
 export class ApiRequestError extends Error {
   status: number
@@ -146,5 +154,37 @@ export const api = {
     if (params.limit) search.set('limit', String(params.limit))
     const qs = search.toString()
     return request<SearchResponse>(`/search${qs ? `?${qs}` : ''}`)
+  },
+
+  sendMessage: (listingId: string, payload: SendMessagePayload, accessToken: string) =>
+    request<Message>(
+      `/listings/${listingId}/messages`,
+      { method: 'POST', body: JSON.stringify(payload) },
+      accessToken,
+    ),
+
+  getThreadMessages: (
+    listingId: string,
+    params: { with?: string; cursor?: string; limit?: number },
+    accessToken: string,
+  ) => {
+    const search = new URLSearchParams()
+    if (params.with) search.set('with', params.with)
+    if (params.cursor) search.set('cursor', params.cursor)
+    if (params.limit) search.set('limit', String(params.limit))
+    const qs = search.toString()
+    return request<ThreadMessagesResponse>(
+      `/listings/${listingId}/messages${qs ? `?${qs}` : ''}`,
+      {},
+      accessToken,
+    )
+  },
+
+  getThreads: (params: { cursor?: string; limit?: number }, accessToken: string) => {
+    const search = new URLSearchParams()
+    if (params.cursor) search.set('cursor', params.cursor)
+    if (params.limit) search.set('limit', String(params.limit))
+    const qs = search.toString()
+    return request<ThreadsResponse>(`/threads${qs ? `?${qs}` : ''}`, {}, accessToken)
   },
 }

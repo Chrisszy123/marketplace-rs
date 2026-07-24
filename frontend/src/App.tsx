@@ -10,6 +10,8 @@ import { MyListingsPage } from './pages/MyListingsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { SearchResultsPage } from './pages/SearchResultsPage'
 import { SignupPage } from './pages/SignupPage'
+import { ThreadPage } from './pages/ThreadPage'
+import { ThreadsPage } from './pages/ThreadsPage'
 import { VerifyOtpPage } from './pages/VerifyOtpPage'
 
 function App() {
@@ -28,6 +30,8 @@ function App() {
             <Route path="/listings/new" element={<CreateListingPage />} />
             <Route path="/listings/:id/edit" element={<EditListingPage />} />
             <Route path="/my-listings" element={<MyListingsPage />} />
+            <Route path="/messages" element={<ThreadsPage />} />
+            <Route path="/listings/:id/chat" element={<ThreadPage />} />
           </Route>
         </Routes>
       </AuthProvider>

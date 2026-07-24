@@ -64,6 +64,13 @@ export function ProfilePage() {
           My listings
         </Link>
 
+        <Link
+          to="/messages"
+          className="mb-3 block w-full rounded-full border border-brand-dark/20 py-2 text-center font-medium text-brand-dark"
+        >
+          Messages
+        </Link>
+
         <button
           type="button"
           onClick={handleLogout}

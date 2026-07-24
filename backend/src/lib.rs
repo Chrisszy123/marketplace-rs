@@ -7,6 +7,7 @@ pub mod pagination;
 pub mod routes;
 pub mod search;
 pub mod storage;
+pub mod ws;
 
 use std::sync::Arc;
 
@@ -27,6 +28,7 @@ pub struct AppState {
     pub s3_bucket: String,
     pub s3_public_url_base: String,
     pub meilisearch: meilisearch_sdk::client::Client,
+    pub ws_registry: ws::Registry,
 }
 
 pub fn app(state: AppState, cors_allowed_origin: &str) -> axum::Router {

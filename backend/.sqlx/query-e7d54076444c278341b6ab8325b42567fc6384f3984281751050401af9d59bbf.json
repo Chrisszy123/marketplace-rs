@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        WITH thread_rows AS (\n            SELECT\n                listing_id,\n                CASE WHEN sender_id = $1 THEN recipient_id ELSE sender_id END AS counterpart_id,\n                body,\n                sender_id,\n                created_at,\n                ROW_NUMBER() OVER (\n                    PARTITION BY listing_id, (CASE WHEN sender_id = $1 THEN recipient_id ELSE sender_id END)\n                    ORDER BY created_at DESC\n                ) AS rn\n            FROM messages\n            WHERE sender_id = $1 OR recipient_id = $1\n        )\n        SELECT\n            tr.listing_id AS \"listing_id!\",\n            tr.counterpart_id AS \"counterpart_id!\",\n            tr.body AS \"last_message_body!\",\n            tr.created_at AS \"last_message_at!\",\n            (tr.sender_id = $1) AS \"last_message_from_me!\",\n            l.title AS \"listing_title!\",\n            u.display_name AS \"counterpart_name!\",\n            u.avatar_url AS counterpart_avatar_url,\n            (SELECT count(*) FROM messages m2\n               WHERE m2.listing_id = tr.listing_id AND m2.sender_id = tr.counterpart_id\n                 AND m2.recipient_id = $1 AND m2.read_at IS NULL) AS \"unread_count!\"\n        FROM thread_rows tr\n        JOIN listings l ON l.id = tr.listing_id\n        JOIN users u ON u.id = tr.counterpart_id\n        WHERE tr.rn = 1\n          AND ($2::timestamptz IS NULL OR (tr.created_at, tr.counterpart_id) < ($2, $3))\n        ORDER BY tr.created_at DESC, tr.counterpart_id DESC\n        LIMIT $4\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "listing_id!",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "messages",
+            "name": "listing_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "counterpart_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "last_message_body!",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "messages",
+            "name": "body"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "last_message_at!",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "messages",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "last_message_from_me!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "listing_title!",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "listings",
+            "name": "title"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "counterpart_name!",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "display_name"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "counterpart_avatar_url",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "avatar_url"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "unread_count!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      false,
+      null,
+      false,
+      false,
+      true,
+      null
+    ]
+  },
+  "hash": "e7d54076444c278341b6ab8325b42567fc6384f3984281751050401af9d59bbf"
+}

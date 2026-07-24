@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { api, ApiRequestError } from '../api/client'
+import { useAuth } from '../context/AuthContext'
 import type { Listing } from '../api/types'
 
 function formatPrice(kobo: number, currency: string) {
@@ -9,6 +10,7 @@ function formatPrice(kobo: number, currency: string) {
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
   const [listing, setListing] = useState<Listing | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -85,6 +87,15 @@ export function ListingDetailPage() {
             </div>
           )}
         </dl>
+
+        {user && user.id !== listing.seller_id && (
+          <Link
+            to={`/listings/${listing.id}/chat?with=${listing.seller_id}`}
+            className="mt-6 block w-full rounded-full bg-brand-green py-2 text-center font-medium text-white"
+          >
+            Message seller
+          </Link>
+        )}
       </div>
     </main>
   )

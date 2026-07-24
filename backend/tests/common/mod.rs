@@ -5,7 +5,7 @@ use std::{net::SocketAddr, sync::Arc};
 use async_trait::async_trait;
 use marketplace_backend::{
     app, auth::sms::LoggingSmsSender, auth::sms::SmsSender, config::Config, db, search, storage,
-    AppState,
+    ws, AppState,
 };
 use tokio::sync::Mutex;
 
@@ -103,6 +103,7 @@ async fn spawn_app_internal(
         s3_bucket: config.s3_bucket.clone(),
         s3_public_url_base: config.s3_public_url_base.clone(),
         meilisearch: meilisearch.clone(),
+        ws_registry: ws::new_registry(),
     };
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -147,6 +148,16 @@ pub fn unique_phone() -> String {
 /// Signs up, verifies via the captured OTP, and logs in a fresh unique user. Returns the access
 /// token so listing tests don't need to re-derive the whole auth flow themselves.
 pub async fn signup_verify_login(base_url: &str, client: &reqwest::Client, sms: &CapturingSmsSender) -> String {
+    signup_verify_login_full(base_url, client, sms).await.1
+}
+
+/// Like `signup_verify_login`, but also returns the user_id — needed by messaging tests, which
+/// have to reason about two distinct accounts (buyer/seller) at once.
+pub async fn signup_verify_login_full(
+    base_url: &str,
+    client: &reqwest::Client,
+    sms: &CapturingSmsSender,
+) -> (String, String) {
     let email = unique_email();
     let phone = unique_phone();
     let password = "correct horse battery staple";
@@ -157,7 +168,7 @@ pub async fn signup_verify_login(base_url: &str, client: &reqwest::Client, sms: 
             "email": email,
             "password": password,
             "phone_number": phone,
-            "display_name": "Listings Test User",
+            "display_name": format!("Test User {}", &email[..8]),
         }))
         .send()
         .await
@@ -193,10 +204,16 @@ pub async fn signup_verify_login(base_url: &str, client: &reqwest::Client, sms: 
         .await
         .expect("invalid login json");
 
-    login["access_token"]
+    let access_token = login["access_token"]
         .as_str()
         .expect("missing access_token")
-        .to_string()
+        .to_string();
+
+    (user_id, access_token)
+}
+
+pub fn ws_url(base_url: &str, access_token: &str) -> String {
+    format!("{}/ws?token={access_token}", base_url.replacen("http://", "ws://", 1))
 }
 
 /// Captures the last OTP "sent" so tests can complete verification without a real SMS provider.

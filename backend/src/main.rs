@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use marketplace_backend::{
-    app, auth::sms::LoggingSmsSender, config::Config, db, jobs, search, storage, AppState,
+    app, auth::sms::LoggingSmsSender, config::Config, db, jobs, search, storage, ws, AppState,
 };
 
 #[tokio::main]
@@ -41,6 +41,7 @@ async fn main() -> anyhow::Result<()> {
         s3_bucket: config.s3_bucket.clone(),
         s3_public_url_base: config.s3_public_url_base.clone(),
         meilisearch,
+        ws_registry: ws::new_registry(),
     };
 
     let listener = tokio::net::TcpListener::bind(&config.server_addr).await?;

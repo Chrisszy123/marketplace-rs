@@ -2,6 +2,7 @@ mod auth;
 mod categories;
 mod health;
 mod listings;
+mod messages;
 mod search;
 mod users;
 
@@ -11,7 +12,7 @@ use axum::{
     Router,
 };
 
-use crate::AppState;
+use crate::{ws, AppState};
 
 const PHOTO_UPLOAD_BODY_LIMIT_BYTES: usize = 6 * 1024 * 1024;
 
@@ -42,4 +43,7 @@ pub fn router() -> Router<AppState> {
         )
         .route("/listings/{id}/renew", post(listings::renew))
         .merge(listing_photo_routes)
+        .route("/listings/{id}/messages", post(messages::send).get(messages::thread_messages))
+        .route("/threads", get(messages::threads))
+        .route("/ws", get(ws::upgrade))
 }

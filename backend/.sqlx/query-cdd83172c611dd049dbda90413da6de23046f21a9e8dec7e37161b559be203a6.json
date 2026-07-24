@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE messages SET read_at = now()\n           WHERE listing_id = $1 AND sender_id = $2 AND recipient_id = $3 AND read_at IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cdd83172c611dd049dbda90413da6de23046f21a9e8dec7e37161b559be203a6"
+}

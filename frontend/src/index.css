@@ -10,6 +10,33 @@
   --color-brand-dark: #1e1e1e;
   --color-brand-forest: #17381b;
   --color-brand-boosted: #e5dd7c;
+  --color-brand-warning: #e0902f;
+  --color-brand-error: #c23b3b;
+
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.1;
+  --text-display--font-weight: 650;
+  --text-h1: 1.75rem;
+  --text-h1--line-height: 1.2;
+  --text-h1--font-weight: 600;
+  --text-h2: 1.375rem;
+  --text-h2--line-height: 1.25;
+  --text-h2--font-weight: 600;
+  --text-h3: 1.125rem;
+  --text-h3--line-height: 1.3;
+  --text-h3--font-weight: 600;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.55;
+  --text-body-sm: 0.8125rem;
+  --text-body-sm--line-height: 1.5;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.4;
+  --text-label--letter-spacing: 0.06em;
+
+  --shadow-card: 0 1px 2px rgba(11, 38, 2, 0.06), 0 8px 20px -12px rgba(11, 38, 2, 0.22);
+  --shadow-sheet: 0 -8px 30px -8px rgba(11, 38, 2, 0.35);
 }
 
 body {
@@ -18,6 +45,14 @@ body {
   background: var(--color-brand-bg);
   color: var(--color-brand-dark);
 }
+
+/* Fallback for utilities that reference tokens with paired metadata (weight/tracking) not
+   picked up by every Tailwind v4 build — keeps the type scale correct either way. */
+.text-display { font-weight: 650; line-height: 1.1; letter-spacing: -0.015em; }
+.text-h1 { font-weight: 600; line-height: 1.2; }
+.text-h2 { font-weight: 600; line-height: 1.25; }
+.text-h3 { font-weight: 600; line-height: 1.3; }
+.text-label { letter-spacing: 0.06em; text-transform: uppercase; }
 
 @keyframes marquee {
   from {
@@ -41,4 +76,80 @@ body {
   .animate-marquee {
     animation: none;
   }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-sheet-up {
+  animation: sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet-up,
+  .animate-fade-in {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dual-thumb price range slider: two overlaid native range inputs, track drawn separately. */
+.range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--color-brand-green);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(11, 38, 2, 0.35);
+  cursor: pointer;
+}
+
+.range-input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--color-brand-green);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(11, 38, 2, 0.35);
+  cursor: pointer;
+}
+
+.range-input::-moz-range-track {
+  background: transparent;
 }

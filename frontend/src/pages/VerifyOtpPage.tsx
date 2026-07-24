@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { AuthLayout } from '../components/layout/AuthLayout'
 import { api, ApiRequestError } from '../api/client'
 
 interface LocationState {
@@ -18,16 +19,15 @@ export function VerifyOtpPage() {
 
   if (!userId) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-brand-bg px-4 text-center">
-        <div>
-          <p className="mb-4 text-brand-dark">
-            Nothing to verify yet — start by creating an account.
-          </p>
-          <Link to="/signup" className="font-medium text-brand-green">
-            Go to signup
-          </Link>
-        </div>
-      </main>
+      <AuthLayout title="Nothing to verify yet">
+        <p className="mb-4 text-body text-brand-dark/70">Start by creating an account.</p>
+        <Link
+          to="/signup"
+          className="block w-full rounded-full bg-brand-green py-3 text-center text-body font-semibold text-white outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-dark-green"
+        >
+          Go to signup
+        </Link>
+      </AuthLayout>
     )
   }
 
@@ -46,40 +46,35 @@ export function VerifyOtpPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-brand-bg px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm"
-      >
-        <h1 className="mb-2 text-2xl font-semibold text-brand-dark-green">Verify your phone</h1>
-        <p className="mb-6 text-sm text-brand-dark/70">
-          Enter the 6-digit code sent to {phoneNumber ?? 'your phone'}. In dev, check the
-          backend log — no real SMS is sent yet.
-        </p>
-
-        <label className="mb-4 block text-sm">
+    <AuthLayout
+      title="Verify your phone"
+      subtitle={`Enter the 6-digit code sent to ${phoneNumber ?? 'your phone'}. In dev, check the backend log — no real SMS is sent yet.`}
+    >
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="otp-code" className="block text-body-sm font-medium text-brand-dark">
           Verification code
           <input
+            id="otp-code"
             required
             inputMode="numeric"
             pattern="[0-9]{6}"
             maxLength={6}
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-brand-dark/20 px-3 py-2 text-center text-lg tracking-[0.5em] outline-none focus:border-brand-green"
+            className="mt-1.5 w-full rounded-xl border border-brand-dark/15 bg-white px-3.5 py-3 text-center text-h2 tracking-[0.4em] text-brand-dark outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/15"
           />
         </label>
 
-        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-4 text-body-sm text-brand-error">{error}</p>}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-full bg-brand-green py-2 font-medium text-white disabled:opacity-60"
+          className="mt-6 w-full rounded-full bg-brand-green py-3 text-body font-semibold text-white outline-none transition hover:brightness-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-dark-green"
         >
           {isSubmitting ? 'Verifying…' : 'Verify'}
         </button>
       </form>
-    </main>
+    </AuthLayout>
   )
 }

@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AuthLayout } from '../components/layout/AuthLayout'
+import { TextField } from '../components/ui/Field'
 import { api, ApiRequestError } from '../api/client'
 
 export function SignupPage() {
@@ -31,74 +33,68 @@ export function SignupPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-brand-bg px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm"
-      >
-        <h1 className="mb-6 text-2xl font-semibold text-brand-dark-green">Create your account</h1>
-
-        <label className="mb-3 block text-sm">
-          Full name
-          <input
+    <AuthLayout
+      title="Create your account"
+      subtitle="Free to join — list or browse in a couple of minutes."
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-brand-green outline-none focus-visible:underline">
+            Log in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          <TextField
+            label="Full name"
+            id="signup-name"
             required
+            autoComplete="name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-brand-dark/20 px-3 py-2 outline-none focus:border-brand-green"
           />
-        </label>
-
-        <label className="mb-3 block text-sm">
-          Email
-          <input
+          <TextField
+            label="Email"
+            id="signup-email"
             required
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-brand-dark/20 px-3 py-2 outline-none focus:border-brand-green"
           />
-        </label>
-
-        <label className="mb-3 block text-sm">
-          Phone number
-          <input
+          <TextField
+            label="Phone number"
+            id="signup-phone"
             required
+            autoComplete="tel"
             placeholder="+2348012345678"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-brand-dark/20 px-3 py-2 outline-none focus:border-brand-green"
           />
-        </label>
-
-        <label className="mb-4 block text-sm">
-          Password
-          <input
+          <TextField
+            label="Password"
+            id="signup-password"
             required
             type="password"
             minLength={8}
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-brand-dark/20 px-3 py-2 outline-none focus:border-brand-green"
           />
-        </label>
+        </div>
 
-        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-4 text-body-sm text-brand-error">{error}</p>}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-full bg-brand-green py-2 font-medium text-white disabled:opacity-60"
+          className="mt-6 w-full rounded-full bg-brand-green py-3 text-body font-semibold text-white outline-none transition hover:brightness-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-dark-green"
         >
           {isSubmitting ? 'Creating account…' : 'Sign up'}
         </button>
-
-        <p className="mt-4 text-center text-sm text-brand-dark/70">
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium text-brand-green">
-            Log in
-          </Link>
-        </p>
       </form>
-    </main>
+    </AuthLayout>
   )
 }

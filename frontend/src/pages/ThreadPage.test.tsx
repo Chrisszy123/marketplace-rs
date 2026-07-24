@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ThreadPage } from './ThreadPage'
 import { api } from '../api/client'
 import type { Message } from '../api/types'
 
 vi.mock('../api/client', () => ({
-  api: { getThreadMessages: vi.fn(), sendMessage: vi.fn() },
+  api: { getThreadMessages: vi.fn(), sendMessage: vi.fn(), getListing: vi.fn() },
   ApiRequestError: class ApiRequestError extends Error {
     status: number
     constructor(status: number, message: string) {
@@ -15,6 +15,29 @@ vi.mock('../api/client', () => ({
     }
   },
 }))
+
+beforeEach(() => {
+  vi.mocked(api.getListing).mockResolvedValue({
+    id: 'listing-1',
+    seller_id: 'seller-1',
+    category_id: 'cat-1',
+    listing_type: 'good',
+    title: 'iPhone 13',
+    description: 'Barely used',
+    price_kobo: 45_000_000,
+    currency: 'NGN',
+    location: 'Lagos',
+    condition: 'used',
+    service_area: null,
+    status: 'active',
+    is_boosted: false,
+    published_at: '2026-01-01T00:00:00Z',
+    expires_at: '2026-02-01T00:00:00Z',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    photos: [],
+  })
+})
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
@@ -51,6 +74,14 @@ function renderThread() {
 }
 
 describe('ThreadPage', () => {
+  it('pins the listing at the top of the thread with its live status', async () => {
+    vi.mocked(api.getThreadMessages).mockResolvedValue({ items: [], next_cursor: null })
+
+    renderThread()
+
+    await waitFor(() => expect(screen.getByText(/Still active/)).toBeInTheDocument())
+  })
+
   it('renders existing messages', async () => {
     vi.mocked(api.getThreadMessages).mockResolvedValue({
       items: [makeMessage()],

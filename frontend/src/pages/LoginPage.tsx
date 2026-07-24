@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { AuthLayout } from '../components/layout/AuthLayout'
+import { TextField } from '../components/ui/Field'
 import { ApiRequestError } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 
@@ -29,57 +31,56 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-brand-bg px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm"
-      >
-        <h1 className="mb-2 text-2xl font-semibold text-brand-dark-green">Log in</h1>
+    <AuthLayout
+      title="Log in"
+      subtitle="Welcome back — good to see you."
+      footer={
+        <>
+          New here?{' '}
+          <Link to="/signup" className="font-semibold text-brand-green outline-none focus-visible:underline">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit}>
         {justVerified && (
-          <p className="mb-4 rounded-lg bg-brand-bg px-3 py-2 text-sm text-brand-dark-green">
+          <p className="mb-4 rounded-xl bg-brand-green/10 px-3 py-2.5 text-body-sm text-brand-dark-green">
             Phone verified — you can log in now.
           </p>
         )}
 
-        <label className="mb-3 block text-sm">
-          Email
-          <input
+        <div className="space-y-4">
+          <TextField
+            label="Email"
+            id="login-email"
             required
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-brand-dark/20 px-3 py-2 outline-none focus:border-brand-green"
           />
-        </label>
-
-        <label className="mb-4 block text-sm">
-          Password
-          <input
+          <TextField
+            label="Password"
+            id="login-password"
             required
             type="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-brand-dark/20 px-3 py-2 outline-none focus:border-brand-green"
           />
-        </label>
+        </div>
 
-        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-4 text-body-sm text-brand-error">{error}</p>}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-full bg-brand-green py-2 font-medium text-white disabled:opacity-60"
+          className="mt-6 w-full rounded-full bg-brand-green py-3 text-body font-semibold text-white outline-none transition hover:brightness-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-dark-green"
         >
           {isSubmitting ? 'Logging in…' : 'Log in'}
         </button>
-
-        <p className="mt-4 text-center text-sm text-brand-dark/70">
-          New here?{' '}
-          <Link to="/signup" className="font-medium text-brand-green">
-            Create an account
-          </Link>
-        </p>
       </form>
-    </main>
+    </AuthLayout>
   )
 }

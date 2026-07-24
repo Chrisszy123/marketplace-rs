@@ -1,9 +1,15 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { BuyingTab } from '../components/profile/BuyingTab'
+import { SellingTab } from '../components/profile/SellingTab'
 import { useAuth } from '../context/AuthContext'
+
+type ProfileTab = 'selling' | 'buying'
 
 export function ProfilePage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab: ProfileTab = searchParams.get('tab') === 'buying' ? 'buying' : 'selling'
 
   if (!user) return null
 
@@ -17,67 +23,49 @@ export function ProfilePage() {
     month: 'long',
   })
 
+  function setTab(next: ProfileTab) {
+    setSearchParams({ tab: next })
+  }
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-brand-bg px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm">
-        <div className="mb-6 flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-bg text-xl font-semibold text-brand-dark-green">
+    <main className="min-h-screen bg-brand-bg px-4 py-8">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-6 flex items-center gap-4 rounded-2xl bg-white p-5 shadow-card">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-bg text-xl font-semibold text-brand-dark-green">
             {user.display_name.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <h1 className="text-xl font-semibold text-brand-dark-green">{user.display_name}</h1>
-            <p className="text-sm text-brand-dark/70">Member since {memberSince}</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-h2 text-brand-dark-green">{user.display_name}</h1>
+            <p className="text-body-sm text-brand-dark/60">
+              Member since {memberSince}
+              {user.phone_verified && <span className="ml-2 text-brand-green">· Verified</span>}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="shrink-0 text-caption font-semibold text-brand-dark/50 outline-none hover:text-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green"
+          >
+            Log out
+          </button>
         </div>
 
-        <dl className="mb-6 space-y-3 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-brand-dark/70">Email</dt>
-            <dd>{user.email}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-brand-dark/70">Location</dt>
-            <dd>{user.location ?? 'Not set'}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-brand-dark/70">Phone</dt>
-            <dd>
-              {user.phone_verified ? (
-                <span className="rounded-full bg-brand-green/10 px-2 py-0.5 text-brand-green">
-                  Verified
-                </span>
-              ) : (
-                'Not verified'
-              )}
-            </dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-brand-dark/70">Rating</dt>
-            <dd>{user.rating ?? 'No ratings yet'}</dd>
-          </div>
-        </dl>
+        <div className="mb-6 flex gap-1 rounded-full bg-white p-1 shadow-card">
+          {(['selling', 'buying'] as ProfileTab[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`flex-1 rounded-full py-2 text-body-sm font-semibold capitalize outline-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green ${
+                tab === t ? 'bg-brand-green text-white' : 'text-brand-dark/60'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
 
-        <Link
-          to="/my-listings"
-          className="mb-3 block w-full rounded-full bg-brand-green py-2 text-center font-medium text-white"
-        >
-          My listings
-        </Link>
-
-        <Link
-          to="/messages"
-          className="mb-3 block w-full rounded-full border border-brand-dark/20 py-2 text-center font-medium text-brand-dark"
-        >
-          Messages
-        </Link>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="w-full rounded-full border border-brand-dark/20 py-2 font-medium text-brand-dark"
-        >
-          Log out
-        </button>
+        {tab === 'selling' ? <SellingTab /> : <BuyingTab />}
       </div>
     </main>
   )

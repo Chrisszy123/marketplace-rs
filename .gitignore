@@ -5,6 +5,10 @@ backend/.env
 # React
 frontend/.env
 frontend/node_modules
+frontend/dist
+
+# Production secrets for docker-compose.prod.yml (copy from .env.example)
+/.env
 
 # Editor / OS
 .DS_Store

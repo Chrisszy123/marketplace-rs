@@ -1,0 +1,17 @@
+{
+	email {$CADDY_EMAIL}
+}
+
+{$DOMAIN} {
+	reverse_proxy frontend:80
+}
+
+api.{$DOMAIN} {
+	reverse_proxy backend:8080
+}
+
+# Serves listing photos (public-read bucket) and handles browser uploads' GET-back. The MinIO
+# admin console (port 9001) is intentionally NOT exposed here.
+media.{$DOMAIN} {
+	reverse_proxy minio:9000
+}

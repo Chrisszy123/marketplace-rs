@@ -46,7 +46,9 @@ platform's job is discovery, listing management, messaging, and seller monetizat
 - Typeface: Host Grotesk (fallback to closest licensed Google Fonts equivalent if unavailable —
   flag if so).
 - Logo mark: a custom "M" enclosing a shopping-bag silhouette with a hidden "P" in its negative
-  space — real asset supplied separately; UI uses a placeholder wordmark until then.
+  space. Real assets are in `frontend/public/SVG` and `frontend/public/PNG` (horizontal/vertical
+  lockups × black/white/mono, plus an icon-only mark); use the `Logo` component
+  (`frontend/src/components/ui/Logo.tsx`) rather than referencing the files directly.
 
 ## Non-negotiable engineering standards
 

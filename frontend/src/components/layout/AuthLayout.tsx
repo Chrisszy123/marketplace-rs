@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { Logo } from '../ui/Logo'
 
 interface AuthLayoutProps {
   title: string
@@ -12,8 +13,8 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
   return (
     <main className="flex min-h-screen">
       <div className="hidden flex-1 flex-col justify-between bg-brand-dark-green px-10 py-10 text-white sm:flex">
-        <Link to="/" className="text-h3 font-semibold">
-          Marketplace
+        <Link to="/" aria-label="Marketplace home">
+          <Logo variant="white" className="h-8" />
         </Link>
         <div>
           <p className="text-display max-w-sm text-balance text-white">
@@ -29,11 +30,8 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
 
       <div className="flex flex-1 items-center justify-center bg-brand-bg px-4 py-10">
         <div className="w-full max-w-sm">
-          <Link
-            to="/"
-            className="mb-8 block text-h3 font-semibold text-brand-dark-green sm:hidden"
-          >
-            Marketplace
+          <Link to="/" className="mb-8 block sm:hidden" aria-label="Marketplace home">
+            <Logo className="h-7" />
           </Link>
           <h1 className="text-h1 text-brand-dark-green">{title}</h1>
           {subtitle && <p className="mt-1.5 text-body-sm text-brand-dark/60">{subtitle}</p>}

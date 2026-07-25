@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Logo } from '../ui/Logo'
 
 const LINK_GROUPS = [
   {
@@ -24,8 +25,8 @@ export function HomeFooter() {
     <footer className="bg-brand-forest px-4 py-10 text-white/70 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
         <div>
-          <p className="text-h3 font-semibold text-white">Marketplace</p>
-          <p className="mt-1 max-w-xs text-body-sm">
+          <Logo variant="white" className="h-7" />
+          <p className="mt-3 max-w-xs text-body-sm">
             Buy and sell anything, locally — a connection layer for everyday trade.
           </p>
         </div>

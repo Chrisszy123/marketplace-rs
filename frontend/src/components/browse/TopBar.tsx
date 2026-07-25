@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getViewerId } from '../../lib/deviceId'
 import { loadFavoriteIds } from '../../lib/favorites'
+import { Logo } from '../ui/Logo'
 
 interface TopBarProps {
   query: string
@@ -26,8 +27,8 @@ export function TopBar({ query, onQueryChange, onSubmit }: TopBarProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-brand-dark/10 bg-white/95 backdrop-blur">
       <div className="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
-        <Link to="/" className="shrink-0 text-h3 font-semibold text-brand-dark-green">
-          Marketplace
+        <Link to="/" className="shrink-0" aria-label="Marketplace home">
+          <Logo className="h-6 sm:h-7" />
         </Link>
 
         <form onSubmit={handleSubmit} className="flex-1">

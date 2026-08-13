@@ -49,3 +49,24 @@ export function ChatBubbleIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
+export function ShareIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...shared} {...props}>
+      <circle cx="18" cy="5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="19" r="2.5" />
+      <path d="M8.2 10.8l7.6-4.6M8.2 13.2l7.6 4.6" />
+    </svg>
+  )
+}
+
+export function LinkIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...shared} {...props}>
+      <path d="M9 15l6-6" />
+      <path d="M11 6l1-1a4 4 0 0 1 5.7 5.7l-1 1" />
+      <path d="M13 18l-1 1A4 4 0 0 1 6.3 13.3l1-1" />
+    </svg>
+  )
+}

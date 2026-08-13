@@ -43,34 +43,42 @@ Everything else — auth, listings, search, messaging — is real and works.
        │  (nginx,    │  │  (Axum API  │───▶│ (S3-compat, │
        │  static     │  │  + WS)      │    │  public-read│
        │  build)     │  │             │    │  bucket)    │
-       └─────────────┘  └──────┬──────┘    └─────────────┘
-                                │
-              ┌─────────────────┼─────────────────┐
-              ▼                 ▼                  ▼
-         ┌─────────┐      ┌─────────┐        ┌─────────────┐
-         │ postgres│      │  redis  │        │ meilisearch │
-         └─────────┘      └─────────┘        └─────────────┘
+       └─────────────┘  └──┬───┬──────┘    └─────────────┘
+                            │   │
+              ┌─────────────┘   └──────────────┐
+              ▼                                 ▼
+       ┌─────────────┐                  ┌─────────────┐        ┌─────────────┐
+       │  Supabase   │                  │   Upstash   │        │ meilisearch │
+       │  (Postgres, │                  │   (Redis,   │        │ (container, │
+       │  external)  │                  │   external) │        │  on-box)    │
+       └─────────────┘                  └─────────────┘        └─────────────┘
 ```
 
-All seven containers run on one Docker network on one VPS. Only Caddy publishes ports (80/443)
-to the host — everything else is reachable only from other containers.
+Meilisearch, MinIO, the backend, the frontend, and Caddy run as containers on one Docker network
+on one VPS — only Caddy publishes ports (80/443) to the host. Postgres and Redis are external
+managed services (Supabase, Upstash), reached over the internet via `DATABASE_URL`/`REDIS_URL`
+rather than running as containers.
 
-**Why one VPS instead of managed services:** the stack is small, self-contained, and every piece
-(Postgres, Redis, Meilisearch, MinIO) already runs as a container in the existing dev
-`docker-compose.yml`, so this is the least-new-moving-parts way to get a real deployment. If you
-outgrow it later, the natural upgrade path is: managed Postgres (Neon/RDS), managed Redis
-(Upstash), Meilisearch Cloud, and a real S3-compatible provider (Cloudflare R2 / DigitalOcean
-Spaces) instead of self-hosted MinIO — each is a drop-in env var change, nothing in the app code
-needs to change.
+**Why not self-host everything:** the original version of this guide ran Postgres and Redis as
+containers alongside everything else, which is simpler but needs a 4GB+ droplet so they don't
+starve each other under load. Offloading them to Supabase/Upstash drops the droplet's own memory
+footprint to just Meilisearch + MinIO + the app, at the cost of two more accounts to manage and a
+network hop for every DB/cache call. Meilisearch and MinIO stay on-box for now — the natural next
+step if you outgrow this is Meilisearch Cloud and Cloudflare R2/DigitalOcean Spaces respectively,
+each a drop-in env var change with no app code changes needed.
 
 ## 2. Prerequisites
 
 - A domain name you control DNS for.
-- A VPS with **at least 2 vCPU / 4GB RAM** (e.g. a $24/mo DigitalOcean droplet or Hetzner CX22).
-  Building the Rust backend image is the heavy step (~2–4 min of compiling); on a 1–2GB box it
-  can OOM — see the note in §5 if you're stuck on a smaller box.
+- A VPS with **at least 2 vCPU / 2GB RAM** (e.g. a $12–18/mo DigitalOcean droplet). With Postgres
+  and Redis offloaded to Supabase/Upstash, the droplet only needs to run Meilisearch, MinIO, the
+  backend, the frontend, and Caddy. Building the Rust backend image is still the heavy step
+  (~2–4 min of compiling) and can OOM below ~2GB — see the note in §5 if you're stuck on a
+  smaller box.
 - Docker + the Docker Compose plugin installed on the VPS (`docker compose version` should work).
 - SSH access to the VPS.
+- A Supabase project (Postgres) and an Upstash Redis database, each with a connection string in
+  hand before §5.
 
 ## 3. DNS
 
@@ -117,8 +125,12 @@ Edit `.env` and fill in:
 
 - `DOMAIN` — your apex domain, no `https://`, no trailing slash (e.g. `myapp.com`).
 - `CADDY_EMAIL` — any address you control, used for Let's Encrypt renewal notices.
-- `POSTGRES_PASSWORD`, `MEILISEARCH_API_KEY`, `JWT_ACCESS_SECRET`, `S3_ACCESS_KEY_ID`,
-  `S3_SECRET_ACCESS_KEY` — generate each with:
+- `DATABASE_URL` — your Supabase project's **direct** connection string (port 5432, not the
+  6543 pooled one — see the comment in `.env.example` for why: PgBouncer transaction mode
+  doesn't support the prepared statements sqlx uses).
+- `REDIS_URL` — your Upstash Redis connection string.
+- `MEILISEARCH_API_KEY`, `JWT_ACCESS_SECRET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` —
+  generate each with:
 
   ```bash
   openssl rand -hex 32
@@ -130,7 +142,8 @@ Keep this `.env` file private — it's already covered by `.gitignore` (root-lev
 > **Building on a small VPS:** if `docker compose build` gets OOM-killed on a 1–2GB box, build
 > the images elsewhere (your laptop, or a CI job) and push them to a registry (e.g. GHCR) instead
 > of building on the server — swap the `build:` blocks in `docker-compose.prod.yml` for `image:`
-> pointing at the registry tag. Not needed on a 4GB+ box.
+> pointing at the registry tag. Not needed on a 2GB+ box now that Postgres/Redis aren't
+> containers here.
 
 ## 6. Launch
 
@@ -138,9 +151,10 @@ Keep this `.env` file private — it's already covered by `.gitignore` (root-lev
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-This builds the backend and frontend images, starts Postgres/Redis/Meilisearch/MinIO, waits for
-each to report healthy, then starts the backend (which **runs pending sqlx migrations
-automatically on boot** — no manual migration step), the frontend, and Caddy last.
+This builds the backend and frontend images, starts Meilisearch/MinIO, waits for each to report
+healthy, then starts the backend (which connects out to Supabase/Upstash and **runs pending sqlx
+migrations against Supabase automatically on boot** — no manual migration step), the frontend,
+and Caddy last.
 
 First boot takes a few minutes (image builds + Caddy's first certificate request per hostname).
 Watch it:
@@ -208,23 +222,24 @@ docker compose -f docker-compose.prod.yml logs -f caddy
 
 **Backups (Postgres is the source of truth — back this up, at minimum):**
 
+Postgres now lives on Supabase, not this box, so backups are Supabase's job — confirm your
+project's plan includes automated daily backups (Settings → Database → Backups in the Supabase
+dashboard) and that the retention window fits your needs; upgrade the plan if it doesn't. It's
+still worth pulling an occasional ad hoc dump yourself for an off-Supabase copy:
+
 ```bash
-# Ad hoc dump
-docker compose -f docker-compose.prod.yml exec postgres \
-  pg_dump -U marketplace marketplace | gzip > backup-$(date +%F).sql.gz
+pg_dump "$DATABASE_URL" | gzip > backup-$(date +%F).sql.gz
 ```
 
-Put that in a daily cron job and ship the file off-server (S3/R2, `scp` to another host, etc.) —
-a backup that only lives on the VPS it's backing up isn't a backup. Also worth periodically
-snapshotting the `minio_data` volume (listing photos) and the VPS provider's own disk-snapshot
-feature, if it has one.
+Also worth periodically snapshotting the `minio_data` volume (listing photos) via the VPS
+provider's own disk-snapshot feature, if it has one — that's still local to the droplet.
 
-**Inspecting the database directly** (no port is published for security — tunnel instead):
+**Inspecting the database directly:** just use `DATABASE_URL` from `.env` with `psql` from
+wherever you're running it — Supabase's direct connection is reachable over the internet, no SSH
+tunnel needed (it's not a container on this box anymore):
 
 ```bash
-ssh -L 5433:localhost:5432 you@your-vps
-# then, locally:
-psql postgres://marketplace:<POSTGRES_PASSWORD>@localhost:5433/marketplace
+psql "$DATABASE_URL"
 ```
 
 ## 9. Known limitations at this scale

@@ -1,37 +1,13 @@
 ##
-## Production stack for a single-VPS deployment. Everything (infra + app + reverse proxy) runs
-## as containers on one Docker network; only Caddy publishes ports to the host.
+## Production stack for a single-VPS deployment. Meilisearch, MinIO, the app, and the reverse
+## proxy run as containers on one Docker network; only Caddy publishes ports to the host.
+## Postgres and Redis are external managed services (e.g. Supabase, Upstash) — see DATABASE_URL
+## and REDIS_URL in .env.example.
 ##
 ## Usage: docker compose -f docker-compose.prod.yml up -d --build
 ## Requires a `.env` file next to this one — see .env.example.
 ##
 services:
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: marketplace
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: marketplace
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U marketplace -d marketplace"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   meilisearch:
     image: getmeili/meilisearch:v1.10
     restart: unless-stopped
@@ -66,8 +42,8 @@ services:
       context: ./backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://marketplace:${POSTGRES_PASSWORD}@postgres:5432/marketplace
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
       MEILISEARCH_URL: http://meilisearch:7700
       MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY}
       SERVER_ADDR: 0.0.0.0:8080
@@ -82,8 +58,6 @@ services:
       S3_PUBLIC_URL_BASE: https://media.${DOMAIN}/marketplace-listings
       RUST_LOG: marketplace_backend=info,tower_http=info
     depends_on:
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
       meilisearch: { condition: service_healthy }
       minio: { condition: service_healthy }
 
@@ -113,8 +87,6 @@ services:
       - minio
 
 volumes:
-  postgres_data:
-  redis_data:
   meilisearch_data:
   minio_data:
   caddy_data:

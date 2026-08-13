@@ -29,6 +29,17 @@ pub struct ListingPhoto {
     pub position: i16,
 }
 
+/// Public-safe seller info for embedding on a listing — deliberately excludes phone_number,
+/// which stays behind the auth-gated `/users/{id}` endpoint (see routes::users::seller_profile).
+#[derive(Serialize)]
+pub struct SellerSummary {
+    pub id: Uuid,
+    pub display_name: String,
+    pub avatar_url: Option<String>,
+    pub member_since: DateTime<Utc>,
+    pub phone_verified: bool,
+}
+
 #[derive(Serialize)]
 pub struct Listing {
     pub id: Uuid,
@@ -49,6 +60,11 @@ pub struct Listing {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub photos: Vec<ListingPhoto>,
+    /// Only populated by the single-listing `get` endpoint, which is the only place the UI
+    /// needs it (a guest browsing a listing should see who's selling without logging in). Other
+    /// endpoints that return a `Listing` (mine, by_seller, create/update/renew) leave this `None`
+    /// rather than paying for the extra lookup on every row.
+    pub seller: Option<SellerSummary>,
 }
 
 struct ListingRow {
@@ -99,6 +115,25 @@ async fn attach_photos(db: &PgPool, row: ListingRow) -> Result<Listing, AppError
         created_at: row.created_at,
         updated_at: row.updated_at,
         photos,
+        seller: None,
+    })
+}
+
+async fn fetch_seller_summary(db: &PgPool, seller_id: Uuid) -> Result<SellerSummary, AppError> {
+    let row = sqlx::query!(
+        r#"SELECT id, display_name, avatar_url, created_at, phone_verified_at
+           FROM users WHERE id = $1"#,
+        seller_id,
+    )
+    .fetch_one(db)
+    .await?;
+
+    Ok(SellerSummary {
+        id: row.id,
+        display_name: row.display_name,
+        avatar_url: row.avatar_url,
+        member_since: row.created_at,
+        phone_verified: row.phone_verified_at.is_some(),
     })
 }
 
@@ -302,7 +337,11 @@ pub async fn get(
     .await?
     .ok_or_else(|| AppError::NotFound("listing not found".into()))?;
 
-    Ok(Json(attach_photos(&state.db, row).await?))
+    let seller = fetch_seller_summary(&state.db, row.seller_id).await?;
+    let mut listing = attach_photos(&state.db, row).await?;
+    listing.seller = Some(seller);
+
+    Ok(Json(listing))
 }
 
 async fn fetch_owned_listing(

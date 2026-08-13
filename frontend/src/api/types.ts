@@ -57,6 +57,16 @@ export interface ListingPhoto {
   position: number
 }
 
+/** Public-safe seller info embedded on a listing — no phone number (see SellerProfile for that,
+ * gated behind auth). Only populated on the single-listing `get` response. */
+export interface SellerSummary {
+  id: string
+  display_name: string
+  avatar_url: string | null
+  member_since: string
+  phone_verified: boolean
+}
+
 export interface Listing {
   id: string
   seller_id: string
@@ -76,6 +86,7 @@ export interface Listing {
   created_at: string
   updated_at: string
   photos: ListingPhoto[]
+  seller: SellerSummary | null
 }
 
 export interface ListingRequest {

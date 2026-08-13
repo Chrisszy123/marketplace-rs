@@ -24,6 +24,24 @@ const LISTING_RESPONSE = {
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
   photos: [],
+  seller: {
+    id: 'seller-1',
+    display_name: 'Ada Lovelace',
+    avatar_url: null,
+    member_since: '2025-06-01T00:00:00Z',
+    phone_verified: true,
+  },
+}
+
+const SELLER_PROFILE_RESPONSE = {
+  id: 'seller-1',
+  display_name: 'Ada Lovelace',
+  avatar_url: null,
+  location: 'Lagos',
+  phone_number: '+2348012345678',
+  phone_verified: true,
+  member_since: '2025-06-01T00:00:00Z',
+  rating: null,
 }
 
 function mockFetch() {
@@ -57,6 +75,18 @@ function mockFetch() {
             }),
         })
       }
+      if (url.includes('/users/seller-1/listings')) {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ items: [] }) })
+      }
+      if (url.includes('/users/seller-1')) {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(SELLER_PROFILE_RESPONSE) })
+      }
+      if (url.includes('/categories')) {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) })
+      }
+      if (url.includes('/search')) {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ items: [], next_cursor: null }) })
+      }
       if (url.includes('/listings/listing-1')) {
         return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(LISTING_RESPONSE) })
       }
@@ -85,9 +115,18 @@ describe('ListingDetailPage with no session at all', () => {
     mockFetch()
     renderDetail()
 
-    await waitFor(() => expect(screen.getByText('Toyota Camry 2018')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Toyota Camry 2018' })).toBeInTheDocument(),
+    )
     expect(screen.getByText('Clean, one owner.')).toBeInTheDocument()
     expect(screen.getByText(/₦/)).toBeInTheDocument()
+  })
+
+  it('shows the seller name without requiring login', async () => {
+    mockFetch()
+    renderDetail()
+
+    await waitFor(() => expect(screen.getAllByText('Ada Lovelace').length).toBeGreaterThan(0))
   })
 
   it('can save a listing as a guest, no login required', async () => {
@@ -116,5 +155,31 @@ describe('ListingDetailPage with no session at all', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Log in' }))
 
     await waitFor(() => expect(screen.getByText('Chat page reached')).toBeInTheDocument())
+  })
+
+  it('prompts login to reveal the phone number, then shows it after signing in', async () => {
+    mockFetch()
+    renderDetail()
+
+    const phoneButton = await screen.findByRole('button', { name: 'Show phone number' })
+    fireEvent.click(phoneButton)
+
+    await screen.findByRole('dialog', { name: 'Log in to continue' })
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.com' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }))
+
+    await waitFor(() => expect(screen.getByText('+2348012345678')).toBeInTheDocument())
+  })
+
+  it('switches to the Seller & Reviews tab and shows an honest empty state', async () => {
+    mockFetch()
+    renderDetail()
+
+    const seeSellerLink = await screen.findByText('See reviews')
+    fireEvent.click(seeSellerLink)
+
+    await waitFor(() => expect(screen.getByText('No reviews yet for this seller.')).toBeInTheDocument())
   })
 })
